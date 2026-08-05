@@ -1,6 +1,78 @@
 {
   "components": {
     "schemas": {
+      "Body_create_recording_endpoint_recordings_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "locale": {
+            "default": "en_us",
+            "title": "Locale",
+            "type": "string"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "min_conf": {
+            "default": 0.25,
+            "title": "Min Conf",
+            "type": "number"
+          },
+          "overlap": {
+            "default": 0.0,
+            "title": "Overlap",
+            "type": "number"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "sensitivity": {
+            "default": 1.0,
+            "title": "Sensitivity",
+            "type": "number"
+          },
+          "site": {
+            "title": "Site",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "site"
+        ],
+        "title": "Body_create_recording_endpoint_recordings_post",
+        "type": "object"
+      },
       "Body_upload_upload_post": {
         "properties": {
           "file": {
@@ -13,6 +85,35 @@
           "file"
         ],
         "title": "Body_upload_upload_post",
+        "type": "object"
+      },
+      "ClipInfo": {
+        "description": "An event-clip WAV stored under `recordings/<id>/clips/`.",
+        "properties": {
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "size_human": {
+            "title": "Size Human",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "filename",
+          "size_bytes",
+          "size_human"
+        ],
+        "title": "ClipInfo",
         "type": "object"
       },
       "DailyUploadCount": {
@@ -31,6 +132,78 @@
           "uploads"
         ],
         "title": "DailyUploadCount",
+        "type": "object"
+      },
+      "Detection": {
+        "description": "One BirdNET detection: a species heard in a `[start_s, end_s]` window.",
+        "properties": {
+          "clip_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clip Key"
+          },
+          "common_name": {
+            "title": "Common Name",
+            "type": "string"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "end_s": {
+            "title": "End S",
+            "type": "number"
+          },
+          "scientific_name": {
+            "title": "Scientific Name",
+            "type": "string"
+          },
+          "start_s": {
+            "title": "Start S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "scientific_name",
+          "common_name",
+          "confidence",
+          "start_s",
+          "end_s"
+        ],
+        "title": "Detection",
+        "type": "object"
+      },
+      "DetectionParams": {
+        "description": "BirdNET detection knobs stored per recording (see meta.json).",
+        "properties": {
+          "locale": {
+            "default": "en_us",
+            "title": "Locale",
+            "type": "string"
+          },
+          "min_conf": {
+            "default": 0.25,
+            "title": "Min Conf",
+            "type": "number"
+          },
+          "overlap": {
+            "default": 0.0,
+            "title": "Overlap",
+            "type": "number"
+          },
+          "sensitivity": {
+            "default": 1.0,
+            "title": "Sensitivity",
+            "type": "number"
+          }
+        },
+        "title": "DetectionParams",
         "type": "object"
       },
       "FileMetadata": {
@@ -321,6 +494,506 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "Recording": {
+        "description": "List/summary view of a recording.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "detection_count": {
+            "default": 0,
+            "title": "Detection Count",
+            "type": "integer"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "params": {
+            "$ref": "#/components/schemas/DetectionParams"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "sample_rate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Rate"
+          },
+          "site": {
+            "title": "Site",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "size_human": {
+            "title": "Size Human",
+            "type": "string"
+          },
+          "source_filename": {
+            "title": "Source Filename",
+            "type": "string"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "species_count": {
+            "default": 0,
+            "title": "Species Count",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "running",
+              "completed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "site",
+          "source_filename",
+          "source_key",
+          "size_bytes",
+          "size_human",
+          "status",
+          "params",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Recording",
+        "type": "object"
+      },
+      "RecordingDetail": {
+        "description": "Full detail: the marquee timeline + species summary + clip players.",
+        "properties": {
+          "clips": {
+            "items": {
+              "$ref": "#/components/schemas/ClipInfo"
+            },
+            "title": "Clips",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "detection_count": {
+            "default": 0,
+            "title": "Detection Count",
+            "type": "integer"
+          },
+          "detections": {
+            "items": {
+              "$ref": "#/components/schemas/Detection"
+            },
+            "title": "Detections",
+            "type": "array"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "params": {
+            "$ref": "#/components/schemas/DetectionParams"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "sample_rate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Rate"
+          },
+          "site": {
+            "title": "Site",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "size_human": {
+            "title": "Size Human",
+            "type": "string"
+          },
+          "source_filename": {
+            "title": "Source Filename",
+            "type": "string"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "species_count": {
+            "default": 0,
+            "title": "Species Count",
+            "type": "integer"
+          },
+          "species_summary": {
+            "items": {
+              "$ref": "#/components/schemas/SpeciesSummaryItem"
+            },
+            "title": "Species Summary",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "running",
+              "completed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "site",
+          "source_filename",
+          "source_key",
+          "size_bytes",
+          "size_human",
+          "status",
+          "params",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RecordingDetail",
+        "type": "object"
+      },
+      "RecordingRunResponse": {
+        "description": "Returned when a detection run is accepted (kicked off in the background).",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "running",
+              "completed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "RecordingRunResponse",
+        "type": "object"
+      },
+      "RecordingUpdate": {
+        "description": "Editable survey metadata + detection params (source audio is immutable).",
+        "properties": {
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "locale": {
+            "default": "en_us",
+            "title": "Locale",
+            "type": "string"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "min_conf": {
+            "default": 0.25,
+            "title": "Min Conf",
+            "type": "number"
+          },
+          "overlap": {
+            "default": 0.0,
+            "title": "Overlap",
+            "type": "number"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "sensitivity": {
+            "default": 1.0,
+            "title": "Sensitivity",
+            "type": "number"
+          },
+          "site": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Site",
+            "type": "string"
+          }
+        },
+        "required": [
+          "site"
+        ],
+        "title": "RecordingUpdate",
+        "type": "object"
+      },
+      "RecordingsStats": {
+        "description": "PAM dashboard roll-up across every recording in the `recordings/` prefix.",
+        "properties": {
+          "audio_hours": {
+            "title": "Audio Hours",
+            "type": "number"
+          },
+          "clips_written": {
+            "title": "Clips Written",
+            "type": "integer"
+          },
+          "distinct_species": {
+            "title": "Distinct Species",
+            "type": "integer"
+          },
+          "recordings_ingested": {
+            "title": "Recordings Ingested",
+            "type": "integer"
+          },
+          "storage_bytes": {
+            "title": "Storage Bytes",
+            "type": "integer"
+          },
+          "storage_human": {
+            "title": "Storage Human",
+            "type": "string"
+          },
+          "total_detections": {
+            "title": "Total Detections",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "recordings_ingested",
+          "total_detections",
+          "distinct_species",
+          "audio_hours",
+          "clips_written",
+          "storage_bytes",
+          "storage_human"
+        ],
+        "title": "RecordingsStats",
+        "type": "object"
+      },
+      "SpeciesSummaryItem": {
+        "description": "Per-species roll-up for the detail view's species summary.",
+        "properties": {
+          "common_name": {
+            "title": "Common Name",
+            "type": "string"
+          },
+          "detections": {
+            "title": "Detections",
+            "type": "integer"
+          },
+          "max_confidence": {
+            "title": "Max Confidence",
+            "type": "number"
+          },
+          "scientific_name": {
+            "title": "Scientific Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scientific_name",
+          "common_name",
+          "detections",
+          "max_confidence"
+        ],
+        "title": "SpeciesSummaryItem",
+        "type": "object"
+      },
       "UploadStats": {
         "properties": {
           "total_downloads": {
@@ -397,8 +1070,8 @@
     }
   },
   "info": {
-    "description": "File upload and management API backed by Backblaze B2",
-    "title": "OSS Starter Kit API",
+    "description": "Passive-acoustic-monitoring API: ingest field recordings, run on-device BirdNET species detection, and store detections + event clips on Backblaze B2",
+    "title": "BirdNET Passive Acoustic Monitoring API",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",
@@ -930,6 +1603,304 @@
         "summary": "Metrics",
         "tags": [
           "metrics"
+        ]
+      }
+    },
+    "/recordings": {
+      "get": {
+        "operationId": "list_recordings_endpoint_recordings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Recording"
+                  },
+                  "title": "Response List Recordings Endpoint Recordings Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Recordings Endpoint",
+        "tags": [
+          "recordings"
+        ]
+      },
+      "post": {
+        "operationId": "create_recording_endpoint_recordings_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_recording_endpoint_recordings_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recording"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Recording Endpoint",
+        "tags": [
+          "recordings"
+        ]
+      }
+    },
+    "/recordings/stats": {
+      "get": {
+        "operationId": "recordings_stats_endpoint_recordings_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordingsStats"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Recordings Stats Endpoint",
+        "tags": [
+          "recordings"
+        ]
+      }
+    },
+    "/recordings/{rec_id}": {
+      "delete": {
+        "operationId": "delete_recording_endpoint_recordings__rec_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rec_id",
+            "required": true,
+            "schema": {
+              "title": "Rec Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Recording Endpoint",
+        "tags": [
+          "recordings"
+        ]
+      },
+      "get": {
+        "operationId": "get_recording_endpoint_recordings__rec_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rec_id",
+            "required": true,
+            "schema": {
+              "title": "Rec Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordingDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Recording Endpoint",
+        "tags": [
+          "recordings"
+        ]
+      },
+      "patch": {
+        "operationId": "update_recording_endpoint_recordings__rec_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rec_id",
+            "required": true,
+            "schema": {
+              "title": "Rec Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordingUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recording"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Recording Endpoint",
+        "tags": [
+          "recordings"
+        ]
+      }
+    },
+    "/recordings/{rec_id}/detections.csv": {
+      "get": {
+        "description": "Presigned URL for the recording's native BirdNET CSV output.",
+        "operationId": "download_detections_csv_endpoint_recordings__rec_id__detections_csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rec_id",
+            "required": true,
+            "schema": {
+              "title": "Rec Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Detections Csv Endpoint",
+        "tags": [
+          "recordings"
+        ]
+      }
+    },
+    "/recordings/{rec_id}/run": {
+      "post": {
+        "operationId": "run_detection_endpoint_recordings__rec_id__run_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rec_id",
+            "required": true,
+            "schema": {
+              "title": "Rec Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordingRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Detection Endpoint",
+        "tags": [
+          "recordings"
         ]
       }
     },

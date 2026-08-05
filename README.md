@@ -1,108 +1,60 @@
-<!-- last_verified: 2026-07-30 -->
-# Vibe Coding Starter Kit
+<!-- last_verified: 2026-08-05 -->
+# BirdNET Passive Acoustic Monitoring
 
-Stop wiring boilerplate and start building. This open-source starter kit gives vibe coders and AI coding agents a production-ready foundation — a full-stack TypeScript + Python template with a pre-built dashboard UI, file upload system, and **[Backblaze B2](https://www.backblaze.com/sign-up/ai-cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=b2ai-oss-start)** cloud storage already integrated. Save thousands of tokens on setup prompts, skip the "build me a dashboard from scratch" loop, and go straight to building your app's unique features.
+Detect and clip bird vocalizations in continuous field recordings, stored on
+**[Backblaze B2](https://www.backblaze.com/sign-up/ai-cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=b2ai-birdnet-passive-acoustic-monitoring)**.
+Upload a passive-acoustic recording (WAV/FLAC), run the official on-device
+**BirdNET-Analyzer** engine, and browse a per-recording **detection timeline** of which
+species were heard and when — with every artifact (detections JSON/CSV, event clips)
+written back to B2.
 
-**What you get out of the box:**
-- Full-stack dashboard UI (Next.js 16 + React 19 + Tailwind v4 + shadcn/ui)
-- File upload with drag-and-drop, progress tracking, and metadata extraction
-- File browser with preview, download, and delete
-- FastAPI backend with strict layered architecture and structural tests
-- Agent-optimized docs — your AI coding agent can read the repo and start contributing immediately
+This is a full-stack sample built on Backblaze's vibe-coding starter kit: a
+TypeScript + Python monorepo with a dashboard UI, a full-bucket file explorer, and a
+FastAPI backend with strict layered architecture and structural tests.
 
-## What it looks like
+**What it does:**
+- **Ingest** continuous field recordings + survey metadata (site, lat/lon, date) to
+  `recordings/<id>/` on B2 — sustained raw-audio landing in object storage.
+- **Detect** bird species/sound events on-device with kahst/birdnet-team's official
+  `birdnet-analyzer` (BirdNET GLOBAL 6K V2.4 model — auto-downloads once (~224 MB) on
+  the first detection, then cached locally; no API key; CPU by default). No second API
+  key: **B2 credentials are the only secret.**
+- **Clip** an event-aligned WAV per detection back to B2 (`recordings/<id>/clips/`) —
+  the write-amplification a PAM pipeline produces.
+- **Timeline** every detection over the recording duration, grouped/colored by species,
+  with a species summary and inline clip playback via B2 presigned URLs.
 
-**Dashboard** — stats, upload activity, and recent uploads at a glance:
+## Why Backblaze B2
 
-![Dashboard view showing stat cards, upload activity chart, and recent uploads table](docs/images/b2-starterkit-dashboard1.png)
+Passive-acoustic monitoring is a storage-heavy workload: recorders produce hours of raw
+audio continuously, and analysis multiplies each raw file into detection tables and many
+small event clips. B2 is the single durable layer for all of it — raw `source/` audio,
+`meta.json`, `detections.json` + `detections.csv`, and every `clips/*.wav` — accessed
+through the S3-compatible API with presigned URLs for in-browser playback.
 
-**File browser** — tree view with preview, download, and delete:
+## Detection engine & model license
 
-![File browser view showing a tree of files with hover actions](docs/images/b2-starterkit-fileview2.png)
-
-## Agent-First Architecture
-
-This repo is optimized for coding agents. Use the template, point your agent at it, and start building.
-
-The structure follows the principle that **repository knowledge is the system of record**. Anything an agent can't access in-context doesn't exist — so everything it needs to reason about the codebase is versioned, co-located, and discoverable from the repo itself.
-
-### How it works
-
-**[AGENTS.md](AGENTS.md) is the single source of truth for all coding agents.** Its bounded, agent-sized entry point gives agents the repository layout, architectural invariants, commands, conventions, and pointers to deeper docs. Agent-specific files (CLAUDE.md, GEMINI.md, Copilot instructions, etc.) are thin pointers back to AGENTS.md.
-
-**Architecture is enforced mechanically, not by convention.** Layering rules, import boundaries, file size limits, and SDK containment are verified by structural tests and lints that run on every change. When rules are enforceable by code, agents follow them reliably.
-
-**The knowledge base is structured for progressive disclosure:**
-
-```
-AGENTS.md              Single source of truth — layout, invariants, commands, conventions
-ARCHITECTURE.md        System layout, layering rules, data flows
-docs/
-  features/            Feature docs (inputs, outputs, flows, edge cases)
-  app-workflows.md     User journeys
-  dev-workflows.md     Engineering workflows and testing
-  SECURITY.md          Security principles
-  RELIABILITY.md       Reliability expectations
-  exec-plans/          Execution plans and tech debt tracker
-```
-
-### Key design decisions
-
-| Principle | Implementation |
-|-----------|---------------|
-| Give agents a single source of truth | AGENTS.md — bounded layout, invariants, commands, conventions |
-| Enforce invariants mechanically | Structural tests + ruff + ESLint verify boundaries |
-| DRY documentation | Each fact lives in one place; no redundant files to drift |
-| Strict layered architecture | `types -> config -> repo -> service -> runtime`, enforced by tests |
-| Prefer boring, composable libraries | stdlib logging over frameworks, Pydantic over ad-hoc validation |
-| Contain external SDKs | `boto3` only in `repo/` layer — verified by structural test |
-| Keep files agent-sized | 300-line limit per file, enforced by test |
-| Docs updated with code | Same-PR requirement prevents documentation rot |
-| Structured observability | JSON logging, `/metrics` endpoint, request tracing |
-
-This approach draws from [OpenAI's experience building with Codex](https://openai.com/index/harness-engineering/): agents work best in environments with strict boundaries, predictable structure, and progressive context disclosure.
+Detection uses the **official** `birdnet-analyzer` package from kahst/birdnet-team (the
+BirdNET-Analyzer project) — not the third-party `birdnetlib` wrapper. It runs the
+**BirdNET GLOBAL 6K V2.4** model, which `birdnet-analyzer` auto-downloads once (~224 MB)
+on the first detection and then caches locally — no API key, CPU by default, so the
+first detection is slower while the model downloads and warms up. The model
+weights are licensed **CC BY-NC-SA 4.0** (non-commercial use + attribution + share-alike).
+Review that license before any non-research or commercial use. See
+[docs/features/detection.md](docs/features/detection.md).
 
 ## Quick Start
 
-You need: Node.js >= 20, pnpm >= 9, Python >= 3.11, and a free **[Backblaze B2 account](https://www.backblaze.com/sign-up/ai-cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=b2ai-oss-start)**.
+You need: Node.js >= 20, pnpm >= 9, Python >= 3.11, and a free
+**[Backblaze B2 account](https://www.backblaze.com/sign-up/ai-cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=b2ai-birdnet-passive-acoustic-monitoring)**.
 
 ### Supported local environments
 
-Local scripts are supported on macOS, Linux, and WSL2. Native Windows is not
-supported yet because the dev scripts use POSIX shell syntax and
-`services/api/.venv/bin/*` paths; use WSL2 on Windows.
-
-Cloud or sandboxed coding-agent environments also need permission for dependency
-downloads during `pnpm run setup`. Running the app or Playwright E2E requires
-localhost server binding for the web server on port 3000 and the API on
-8000-8009, plus permission to launch the Playwright Chromium browser. If a
-sandbox denies binding, `pnpm run doctor` and `scripts/pick-port.mjs` report
-`EPERM`/`EACCES` as a permissions issue instead of a busy port. A host without
-IPv6 (many containers) is not treated as a failure — the IPv4 probe decides.
-
-### Start a new project
-
-**Option 1: GitHub Template (recommended)**
-
-Click the green **"Use this template"** button at the top of this repo, name your project, then:
-
-```bash
-git clone https://github.com/yourorg/my-cool-app.git
-cd my-cool-app
-```
-
-**Option 2: Clone and reinitialize**
-
-```bash
-git clone https://github.com/backblaze-b2-samples/vibe-coding-starter-kit.git my-cool-app
-cd my-cool-app
-rm -rf .git
-git init
-git add .
-git commit -m "Initial commit from vibe-coding-starter-kit"
-```
-
-Either way you get a clean project with no upstream history — ready to push to your own repo and point your agent at it.
+Local scripts are supported on macOS, Linux, and WSL2. Native Windows is not supported
+yet because the dev scripts use POSIX shell syntax and `services/api/.venv/bin/*` paths;
+use WSL2 on Windows. Detection runs on **CPU by default**; it uses an NVIDIA GPU only
+when CUDA is available. BirdNET's TensorFlow/TFLite backend has no usable Apple MPS
+backend, so on macOS (Apple Silicon) detection runs on CPU.
 
 ### Setup
 
@@ -112,28 +64,32 @@ Either way you get a clean project with no upstream history — ready to push to
 pnpm run setup
 ```
 
-This copies `.env.example` to `.env` only when `.env` does not already exist,
-installs workspace dependencies from `pnpm-lock.yaml`, creates
-`services/api/.venv` if missing, and installs the API's committed Python 3.11
-resolution from `services/api/requirements.lock`. It is safe to rerun and never
-overwrites an existing `.env`.
+This copies `.env.example` to `.env` (only if missing), installs workspace dependencies,
+creates `services/api/.venv`, and installs the API's committed Python 3.11 resolution
+from `services/api/requirements.lock` — including the heavy BirdNET/TensorFlow tree, so
+the first run takes a while and the first detection warms the model up for a few seconds.
 
-> Use the `pnpm run` form: `setup` (like `doctor`) is a built-in pnpm command
-> before pnpm 11, so bare `pnpm setup` would run pnpm's own command instead of
-> this script.
+> Use the `pnpm run` form: `setup` (like `doctor`) is a built-in pnpm command before
+> pnpm 11, so bare `pnpm setup` would run pnpm's own command instead of this script.
 
 **2. Add your B2 credentials**
 
-Open `.env` in your editor and keep it visible. Then head to the [Backblaze B2 dashboard](https://secure.backblaze.com/b2_buckets.htm?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=b2ai-oss-start) and:
+Open `.env` and fill in the standard `B2_*` values. In the
+[Backblaze B2 dashboard](https://secure.backblaze.com/b2_buckets.htm?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=b2ai-birdnet-passive-acoustic-monitoring):
 
-1. **Create a bucket.** B2 will show two values — paste each into `.env`:
+1. **Create a bucket** and note its region — B2 shows it in the bucket's S3 endpoint,
+   e.g. an endpoint of `s3.us-west-004.backblazeb2.com` means `B2_REGION=us-west-004`.
+   The app derives the S3 endpoint from the region automatically.
    - **Bucket Unique Name** → `B2_BUCKET_NAME`
-   - **Endpoint** → `B2_ENDPOINT`
-2. **Create an application key** with `Read and Write` permission. B2 will show two values — paste each into `.env`:
-   - **keyID** → `B2_KEY_ID`
+   - region (from the endpoint) → `B2_REGION`
+2. **Create an application key** with `Read and Write` on that bucket:
+   - **keyID** → `B2_APPLICATION_KEY_ID`
    - **applicationKey** → `B2_APPLICATION_KEY` *(only shown once — paste it now)*
 
-> Want a walkthrough? See the docs for [creating a bucket](https://www.backblaze.com/docs/cloud-storage-create-and-manage-buckets) and [creating app keys](https://www.backblaze.com/docs/cloud-storage-create-and-manage-app-keys).
+`B2_PUBLIC_URL_BASE` is optional (only for a public bucket); the app falls back to
+presigned URLs without it. See docs for
+[creating a bucket](https://www.backblaze.com/docs/cloud-storage-create-and-manage-buckets)
+and [app keys](https://www.backblaze.com/docs/cloud-storage-create-and-manage-app-keys).
 
 **3. Run it**
 
@@ -141,44 +97,57 @@ Open `.env` in your editor and keep it visible. Then head to the [Backblaze B2 d
 pnpm dev
 ```
 
-That's it. Frontend at `localhost:3000`, API at `localhost:8000`. Upload a file and see it working. Interactive API docs (Swagger UI) are at `localhost:8000/docs`, with ReDoc at `/redoc`.
+Frontend at `localhost:3000`, API at `localhost:8000`. Open **Recordings → New
+recording**, upload a short WAV/FLAC, then **Run detection** and watch the timeline
+populate. Interactive API docs (Swagger UI) are at `localhost:8000/docs`.
 
-`pnpm dev` runs the preflight check first — it catches the common setup gotchas (wrong Node/Python version, missing venv, missing or placeholder `.env`, ports already taken) and tells you exactly how to fix each one. Run it standalone any time with `pnpm run doctor`.
+`pnpm dev` runs the preflight `pnpm run doctor` first — it catches the common gotchas
+(wrong Node/Python version, missing venv, missing or placeholder `.env`, ports taken).
 
-## Building Your App
+### Seeding a demo recording
 
-When you adapt this kit for a new app, keep the shared scaffolding and only swap out what's app-specific:
+A fresh clone has an empty bucket. To have something to run without hunting for audio,
+seed **one** short public-domain / CC0 bird recording (~30–120 s):
 
-- **Keep** the UI kit (`apps/web/src/components/ui/` + design tokens in `globals.css` + `/design`).
-- **Keep** the File Explorer (`/files`) and Upload (`/upload`) pages and their sidebar nav entries — they're the reusable B2-backed surface.
-- **Adapt** the Dashboard (`/`) to your use case — replace the default stats, chart, and recent uploads with metrics that reflect what your app actually does.
-- **Rebrand** by editing a single file: `apps/web/src/lib/app-config.ts` holds the app name and description (`APP_NAME`, `APP_DESCRIPTION`). Changing them there updates the page title, sidebar, and breadcrumb everywhere — no other files to touch.
+1. Fetch a short CC0 clip. Two documented options:
+   - BirdNET-Analyzer ships an example soundscape — after `pnpm run setup`, find it
+     under `services/api/.venv/.../birdnet_analyzer/example/` and copy a `*.wav` out.
+   - Download a CC0-licensed recording from [xeno-canto](https://xeno-canto.org) (filter
+     the license to CC0) and save it locally as a WAV/FLAC.
+2. In the app: **Recordings → New recording**, choose the file, set a site name, and
+   ingest. Then click **Run detection**.
 
-Full contract and rationale: [AGENTS.md §2 — Building on This Starter Kit](AGENTS.md#2-building-on-this-starter-kit).
+Large binary audio is intentionally **not** committed to this repo — seeding fetches or
+copies a clip locally at run time.
+
+## Building on this sample
+
+- **Keep** the UI kit (`apps/web/src/components/ui/` + tokens in `globals.css` + `/design`).
+- **Keep** the full-bucket File Explorer (`/files`) and generic Upload (`/upload`) — the
+  reusable B2-backed scaffolding. The domain ingest is the **Recordings** create flow.
+- **Rebrand** by editing `apps/web/src/lib/app-config.ts` (`APP_NAME`, `APP_DESCRIPTION`).
+
+Full contract: [AGENTS.md §2 — Building on This Starter Kit](AGENTS.md#2-building-on-this-starter-kit).
 
 ## Core Features
 
-- [File Upload](docs/features/file-upload.md) — drag-and-drop upload with real-time progress
-- [File Browser](docs/features/file-browser.md) — list, preview, download, delete files
-- [Dashboard](docs/features/dashboard.md) — stats cards, upload chart, recent uploads
-- [Metadata Extraction](docs/features/metadata-extraction.md) — image dimensions, EXIF, PDF info, checksums
-- [Design System](docs/design-system.md) — tokens, primitives, AI elements, the blaze generating loader, and inline `ErrorState` / `EmptyState` patterns. Live preview at `/design`.
-- Inline error handling — fetch failures surface *what's wrong* (API offline, 401, 5xx) and offer a Retry, instead of silently rendering empty state.
-- Single-source config — one `.env` at the repo root powers both API and web app, validated at startup so misconfig fails fast with a readable message.
-- Centralized data layer — every fetch goes through TanStack Query hooks in `apps/web/src/lib/queries.ts`; cache invalidation is one call after a mutation.
-- Checked API contract — `docs/api/openapi.json` plus `pnpm contract:check` catch FastAPI/client route drift.
-- Structural tests — verify layering rules, import boundaries, SDK containment, file size limits
-- Structured JSON logging — every request traced with `request_id` and timing
-- `/health` endpoint — B2 connectivity check
-- `/metrics` endpoint — Prometheus-format counters (request count, latency, uploads)
-- `/docs` + `/redoc` — auto-generated interactive API docs (toggle off in prod with `ENABLE_DOCS=false`)
-- Per-IP rate limiting and magic-byte upload validation — see [SECURITY.md](docs/SECURITY.md)
+- [Recordings](docs/features/recordings.md) — ingest, list (sample-scoped explorer),
+  edit, delete, and run detection over the `recordings/` prefix
+- [BirdNET Detection](docs/features/detection.md) — on-device engine, model + license,
+  parameters, CPU/GPU, JSON/CSV outputs, event clipping
+- [Detection Timeline](docs/features/timeline.md) — per-recording timeline, species
+  summary, and clip playback from B2 presigned URLs
+- [Dashboard](docs/features/dashboard.md) — PAM metrics (recordings, detections,
+  species, audio-hours, clips, storage used)
+- [File Browser](docs/features/file-browser.md) — browse the entire bucket
+- [File Upload](docs/features/file-upload.md) — generic drag-and-drop B2 upload
+- [Metadata Extraction](docs/features/metadata-extraction.md) — checksums, image/PDF info
+- [Design System](docs/design-system.md) — tokens, primitives, error/empty states. Live at `/design`.
 
 ## Tech Stack
 
-- TypeScript, Next.js 16, React 19, Tailwind v4, shadcn/ui, Recharts
-- TanStack Query — caching, dedup, retry, stale-while-revalidate for every fetch
-- Python 3.11+, FastAPI, boto3, Pydantic v2, Pillow, PyPDF2
+- TypeScript, Next.js 16, React 19, Tailwind v4, shadcn/ui, Recharts, TanStack Query
+- Python 3.11+, FastAPI, boto3, Pydantic v2, `birdnet-analyzer` (TensorFlow), `soundfile`
 - Backblaze B2 (S3-compatible object storage)
 - pnpm workspaces (monorepo)
 
@@ -186,105 +155,64 @@ Full contract and rationale: [AGENTS.md §2 — Building on This Starter Kit](AG
 
 | Command | What it does |
 |---------|-------------|
-| `pnpm run setup` | Idempotently copy `.env.example` to `.env` only if missing, install workspace dependencies, create the backend venv, and install the locked API dependencies |
-| `pnpm run doctor` | Preflight environment check (also runs automatically before `pnpm dev`) |
+| `pnpm run setup` | Idempotently copy `.env.example` to `.env` if missing, install deps, create the backend venv, install the locked API dependencies |
+| `pnpm run doctor` | Preflight environment check (also runs before `pnpm dev`) |
 | `pnpm dev` | Start frontend + backend |
 | `pnpm dev:web` | Frontend only |
 | `pnpm dev:api` | Backend only |
 | `pnpm contract:export` | Export deterministic FastAPI OpenAPI JSON to `docs/api/openapi.json` |
-| `pnpm contract:check` | Verify the checked-in OpenAPI artifact and frontend API client route registry |
+| `pnpm contract:check` | Verify the checked-in OpenAPI artifact and frontend route registry |
 | `pnpm check:agent-docs` | Validate agent shims, command docs, CI claims, and `.env` ignore coverage |
-| `pnpm verify` | Credential-free canonical non-live pre-PR suite — runs `check:agent-docs`, `verify:api`, then `verify:web` |
+| `pnpm verify` | Credential-free canonical non-live suite — `check:agent-docs`, `verify:api`, `verify:web` |
 | `pnpm verify:api` | Backend half: API lint, API tests, structure tests |
 | `pnpm verify:web` | Frontend half: web lint, web unit tests, web typecheck + build |
-| `pnpm verify:full` | `pnpm run doctor`, then `pnpm verify`, then Playwright E2E; requires populated `.env`, local server/browser permission, port 3000 free, and Chromium installed |
+| `pnpm verify:full` | `pnpm run doctor`, then `pnpm verify`, then Playwright E2E |
 | `pnpm build` | Build frontend |
 | `pnpm lint` | Lint frontend |
 | `pnpm lint:api` | Lint backend (ruff) |
-| `pnpm test:web` | Run frontend unit tests (vitest) |
-| `pnpm test:api` | Run backend tests |
+| `pnpm test:web` | Frontend unit tests (vitest) |
+| `pnpm test:api` | Backend tests (pytest) |
 | `pnpm check:structure` | Verify layering rules |
-| `pnpm test:e2e` | Playwright E2E smoke tests (run `pnpm --filter @vibe-coding-starter-kit/web exec playwright install chromium` once first) |
+| `pnpm test:e2e` | Playwright E2E smoke tests |
 
-Run `pnpm run setup` once before local development, and rerun it after pulling
-dependency changes. It installs workspace dependencies from `pnpm-lock.yaml`
-and API dependencies from `services/api/requirements.lock`. If you add a Node
-dependency yourself, run `pnpm install` to refresh `pnpm-lock.yaml`; for an API
-dependency, follow the reviewed refresh workflow in
-[docs/dev-workflows.md](docs/dev-workflows.md#python-dependency-updates). Run
-`pnpm verify` before opening a PR; it needs
-`services/api/.venv` from setup. Run `pnpm verify:full` when you can start the
-local app stack and browser tests: `.env` must contain real B2 values, local
-server binding must be permitted, Playwright's Chromium browser must be
-installed, and port 3000 must be free (or already serving this app). Playwright
-waits on `http://localhost:3000`,
-but `next dev` falls back to the next free port when 3000 is taken — so an
-unrelated process on 3000 makes the E2E run time out. The API starts at
-`localhost:8000` or the next free port chosen by `scripts/dev.sh`.
+`pnpm verify` needs neither B2 credentials nor a browser: the detection and audio tests
+mock `birdnet_analyzer` + B2, so the suite stays offline. Real BirdNET runs when you
+`pnpm dev` with a populated `.env`. See
+[docs/dev-workflows.md](docs/dev-workflows.md#python-dependency-updates) for the API
+dependency refresh workflow.
 
-`pnpm verify` needs neither B2 credentials nor a browser. For parallel agents,
-use one Git worktree per verification run as documented in [the verification
-workflow](docs/dev-workflows.md#non-live-verification). That page also covers
-normal timing, slow-run recovery, and installing the optional local pre-commit
-hooks.
+## Deployment
 
-## Deploying to Vercel
-
-This starter runs on Vercel as **two Projects from the same monorepo** — the
-FastAPI API rooted at `services/api` and the Next.js web app rooted at
-`apps/web`. Deploy them in order and wire the two origins together:
-
-| Step | Project | One-click deploy |
-|------|---------|------------------|
-| 1 | **API** (`services/api`) | [![Deploy the API to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbackblaze-b2-samples%2Fvibe-coding-starter-kit&root-directory=services%2Fapi&project-name=vcsk-api&env=B2_KEY_ID,B2_APPLICATION_KEY,B2_ENDPOINT,B2_BUCKET_NAME,MAX_FILE_SIZE&envDescription=B2%20credentials%2C%20bucket%2C%20and%20the%204MB%20Vercel%20upload%20cap&envLink=https%3A%2F%2Fgithub.com%2Fbackblaze-b2-samples%2Fvibe-coding-starter-kit%2Fblob%2Fmain%2Finfra%2Fvercel%2FREADME.md) |
-| 2 | **Web** (`apps/web`) | [![Deploy the web app to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbackblaze-b2-samples%2Fvibe-coding-starter-kit&root-directory=apps%2Fweb&project-name=vcsk-web&env=NEXT_PUBLIC_API_URL&envDescription=Origin%20of%20the%20deployed%20API%20Project%20from%20step%201&envLink=https%3A%2F%2Fgithub.com%2Fbackblaze-b2-samples%2Fvibe-coding-starter-kit%2Fblob%2Fmain%2Finfra%2Fvercel%2FREADME.md) |
-
-1. **Deploy the API.** Set the B2 credentials and bucket, and
-   `MAX_FILE_SIZE=4000000` — Vercel Functions cap each request/response payload
-   at 4.5 MB, so the starter's 100 MB default must come down. Copy the API URL
-   Vercel gives you.
-2. **Deploy the web app.** Set `NEXT_PUBLIC_API_URL` to that API URL; Next.js
-   inlines it at build time. Copy the web URL.
-3. **Let the browser reach the API.** In the API Project, set
-   `API_CORS_ORIGINS` to the exact web URL and redeploy — otherwise the browser
-   blocks every call by CORS.
-
-For uploads larger than 4.5 MB, switch to a direct-to-B2 presigned-upload flow
-instead of proxying file bytes through a Function.
-
-The buttons clone the repo into your account as a quick preview. For the durable
-setup (fork once, import it twice as two Projects), the full variable
-classification, security controls, preview/production process, `/health`
-verification, and rollback, follow the [Vercel delivery contract](infra/vercel/README.md).
-The API is unauthenticated and bucket-wide, so use a dedicated B2 bucket/prefix
-and key for any preview. Deploying is a human-approved action — nothing here
-performs one for you.
+Detection needs a real Python runtime with TensorFlow and does long-running,
+larger-than-serverless work, so deploy the API to a container host such as
+**Railway** (see [infra/railway/](infra/railway/)) rather than a serverless Function
+platform. The Next.js web app can deploy anywhere; point `NEXT_PUBLIC_API_URL` at the
+API origin and set the API's `API_CORS_ORIGINS` to the exact web origin. The API is
+unauthenticated and bucket-wide by design — use a dedicated B2 bucket/prefix and key for
+any shared deployment. Deploying is a human-approved action.
 
 ## Documentation Map
 
 | Doc | Purpose |
 |-----|---------|
 | [AGENTS.md](AGENTS.md) | Agent table of contents — start here |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System layout, layering, data flows |
-| [docs/features/](docs/features/) | Feature docs (upload, browser, dashboard, metadata) |
-| [docs/design-system.md](docs/design-system.md) | Design tokens, primitives, AI elements, loader, error/empty states |
-| [docs/app-workflows.md](docs/app-workflows.md) | User journeys |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System layout, layering, data flows, `recordings/` layout |
+| [docs/features/](docs/features/) | Feature docs (recordings, detection, timeline, dashboard, files) |
+| [docs/app-workflows.md](docs/app-workflows.md) | User journeys (ingest → detect → clip → timeline) |
 | [docs/dev-workflows.md](docs/dev-workflows.md) | Engineering workflows and testing |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security principles |
 | [docs/RELIABILITY.md](docs/RELIABILITY.md) | Reliability expectations |
-| [infra/vercel/README.md](infra/vercel/README.md) | Vercel deployment contract |
 | [docs/exec-plans/](docs/exec-plans/) | Execution plans and tech debt tracker |
-
-## Contributing
-
-Start with [AGENTS.md](AGENTS.md). It's the map — everything else is discoverable from there. For local commit hooks, follow [the pre-commit workflow](docs/dev-workflows.md#pre-commit).
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License for the sample code — see [LICENSE](LICENSE). The BirdNET GLOBAL 6K V2.4
+**model weights** that `birdnet-analyzer` downloads and uses are **CC BY-NC-SA 4.0** and
+are not covered by this repository's MIT license.
 
 ## Claude Agent B2 Skill
 
-Manage Backblaze B2 from your terminal using natural language (list/search, audits, stale or large file detection, security checks, safe cleanup).
+Manage Backblaze B2 from your terminal using natural language (list/search, audits,
+stale or large file detection, security checks, safe cleanup).
 
 Repo: [https://github.com/backblaze-b2-samples/claude-skill-b2-cloud-storage](https://github.com/backblaze-b2-samples/claude-skill-b2-cloud-storage)

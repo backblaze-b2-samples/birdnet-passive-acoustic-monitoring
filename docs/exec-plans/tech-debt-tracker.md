@@ -37,7 +37,6 @@ Low-severity polish, left for a follow-up; none blocks the core flow.
 - `/upload` result card — "View in Files" is a bare `/files` navigation with no highlight or scroll-to, so in a deep or busy tree the user hunts for the just-uploaded file again. `previewHref()` now exists, so this is a one-line change
 - `/upload` error row — a 113,798,180-byte file is rejected as "exceeds 100MB limit (108.5 MB)"; the cap is actually 100 MiB, so the label and the humanized size use different units than the check
 - `/files` preview + upload metadata panel — an EXIF `Software` value can carry trailing NUL padding straight into the rendered DOM (invisible on screen, but unsanitised)
-- All screens — the app names itself "OSS Starter Kit" in the sidebar, header and breadcrumb while `README.md` titles the product "Vibe Coding Starter Kit", so the shipped name and the docs disagree
 - `/settings` Danger Zone — the "Empty this bucket" card copy makes an unconditional destructive claim with no on-card qualifier (the confirm dialog does note it is a demo)
 - `/files` preview dialog — while the presigned URL is pending, the loading label is screen-reader-only and never escalates, so past ~5s a sighted user sees only an unlabelled shimmer (the dashboard, by contrast, escalates its wait copy)
 - `/upload` File Details — the success toast can overlap the Dimensions row and hide its value while the panel is open
@@ -76,3 +75,16 @@ Low-severity polish, left for a follow-up; none blocks the core flow.
 | Custom `FileNotFoundError` shadowed the built-in | Renamed to `FileNotFoundServiceError` |
 | Dropzone accepted any file type client-side | `accept` allow-list mirroring backend `ALLOWED_TYPES` (tested for drift) |
 | No test harness for feature specs | pytest suite across upload, files, activity, errors, validation, rate limit, pagination |
+
+## 2026-08-05 — verify
+
+Nitpicks surfaced by the live UI verify pass (goal: upload → run BirdNET detection →
+browse the per-recording timeline with clip playback). None block the goal; logged here
+rather than fixed. Two of these are gate-demoted frictions (well-signposted / honestly
+handled), the rest are pure nitpicks.
+
+- Recording detail (Pending) — after ingest the recording is Pending and detection does not auto-start; the user clicks the (prominent, guided) "Run detection" button → the one manual hand-off in the flow, deliberate for reproducible per-run params; consider an optional "Ingest & run detection" affordance (shot `.local/verify/A/06-detection-running.png`).
+- Recording detail (running) — the in-progress state is an honest animated indeterminate loader with accurate copy, but there is no determinate progress bar / ETA on a >10 s wait; BirdNET exposes no true progress %, so a determinate bar would be an estimate → optional coarse stage-based progress (download → analyze → clip → save) if a truthful signal is wanted (shot `.local/verify/B/05-detection-running-midwait.png`).
+- Dashboard "Detections by recording" chart — with a single recording the bar renders full-width → cap bar width / left-align sparse-data series so one recording doesn't look odd (shot `.local/verify/A/11-dashboard-populated.png`).
+- File Explorer `/files` preview — the generic starter preview dialog cannot inline-render `text/csv`/`application/json`, so reading `detections.csv`/`detections.json` content in-app requires Download (content itself is correct via the presigned URL) (shot `.local/verify/C/31-files-csv-preview.png`).
+- `detections.csv` `File` column — leaks the ephemeral local temp path used during analysis (e.g. `/var/folders/.../T/birdnet-<id>-<rand>/source.wav`) instead of the B2 key or original filename; Start/End/species/confidence columns are all correct → sanitize the `File` column (or rewrite to the B2 key) before writing the CSV back to B2 (evidence `.local/verify/C/results.json`).

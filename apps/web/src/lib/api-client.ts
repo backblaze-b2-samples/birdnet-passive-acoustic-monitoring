@@ -3,13 +3,18 @@ import type {
   FileMetadata,
   FileMetadataDetail,
   FileUploadResponse,
+  Recording,
+  RecordingDetail,
+  RecordingRunResponse,
+  RecordingsStats,
+  RecordingUpdate,
   UploadStats,
-} from "@vibe-coding-starter-kit/shared";
+} from "@birdnet-pam/shared";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 type ApiClientRoute = {
-  method: "delete" | "get" | "post";
+  method: "delete" | "get" | "patch" | "post";
   path: string;
 };
 
@@ -28,6 +33,15 @@ export const API_CLIENT_ROUTES = {
   legacyFileMetadata: { method: "get", path: "/files/{key}" },
   legacyFileDelete: { method: "delete", path: "/files/{key}" },
   upload: { method: "post", path: "/upload" },
+  // Recordings (passive-acoustic monitoring)
+  recordings: { method: "get", path: "/recordings" },
+  recordingsStats: { method: "get", path: "/recordings/stats" },
+  createRecording: { method: "post", path: "/recordings" },
+  recording: { method: "get", path: "/recordings/{rec_id}" },
+  updateRecording: { method: "patch", path: "/recordings/{rec_id}" },
+  deleteRecording: { method: "delete", path: "/recordings/{rec_id}" },
+  runDetection: { method: "post", path: "/recordings/{rec_id}/run" },
+  detectionsCsv: { method: "get", path: "/recordings/{rec_id}/detections.csv" },
 } as const satisfies Record<string, ApiClientRoute>;
 
 /** Typed API error with HTTP status code for caller-side branching. */
@@ -267,6 +281,116 @@ export function uploadFile(
     xhr.open(
       API_CLIENT_ROUTES.upload.method.toUpperCase(),
       `${API_BASE}${API_CLIENT_ROUTES.upload.path}`
+    );
+    xhr.send(formData);
+  });
+}
+
+// --- Recordings (passive-acoustic monitoring) ------------------------------
+
+/** Substitute a recording id into a `{rec_id}` path template. */
+function recordingPath(template: string, id: string): string {
+  return template.replace("{rec_id}", encodeURIComponent(id));
+}
+
+export interface RecordingCreateInput {
+  site: string;
+  latitude?: string;
+  longitude?: string;
+  recorded_at?: string;
+  min_conf: number;
+  sensitivity: number;
+  overlap: number;
+  locale: string;
+}
+
+export async function getRecordings() {
+  return apiFetch<Recording[]>(API_CLIENT_ROUTES.recordings.path);
+}
+
+export async function getRecordingsStats() {
+  return apiFetch<RecordingsStats>(API_CLIENT_ROUTES.recordingsStats.path);
+}
+
+export async function getRecording(id: string) {
+  return apiFetch<RecordingDetail>(
+    recordingPath(API_CLIENT_ROUTES.recording.path, id)
+  );
+}
+
+export async function updateRecording(id: string, update: RecordingUpdate) {
+  return apiFetch<Recording>(
+    recordingPath(API_CLIENT_ROUTES.updateRecording.path, id),
+    {
+      method: API_CLIENT_ROUTES.updateRecording.method.toUpperCase(),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(update),
+    }
+  );
+}
+
+export async function deleteRecording(id: string) {
+  return apiFetch<{ deleted: boolean; id: string }>(
+    recordingPath(API_CLIENT_ROUTES.deleteRecording.path, id),
+    { method: API_CLIENT_ROUTES.deleteRecording.method.toUpperCase() }
+  );
+}
+
+export async function runDetection(id: string) {
+  return apiFetch<RecordingRunResponse>(
+    recordingPath(API_CLIENT_ROUTES.runDetection.path, id),
+    { method: API_CLIENT_ROUTES.runDetection.method.toUpperCase() }
+  );
+}
+
+export async function getDetectionsCsvUrl(id: string) {
+  return apiFetch<{ url: string }>(
+    recordingPath(API_CLIENT_ROUTES.detectionsCsv.path, id)
+  );
+}
+
+/** Create a recording (multipart audio + survey metadata) with upload progress. */
+export function createRecording(
+  file: File,
+  input: RecordingCreateInput,
+  onProgress?: (percent: number) => void
+): Promise<Recording> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("site", input.site);
+    if (input.latitude) formData.append("latitude", input.latitude);
+    if (input.longitude) formData.append("longitude", input.longitude);
+    if (input.recorded_at) formData.append("recorded_at", input.recorded_at);
+    formData.append("min_conf", String(input.min_conf));
+    formData.append("sensitivity", String(input.sensitivity));
+    formData.append("overlap", String(input.overlap));
+    formData.append("locale", input.locale);
+
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    });
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        try {
+          const body = JSON.parse(xhr.responseText);
+          reject(new ApiError(body.detail || `Create failed: ${xhr.status}`, xhr.status));
+        } catch {
+          reject(new ApiError(`Create failed: ${xhr.status}`, xhr.status));
+        }
+      }
+    });
+    xhr.addEventListener("error", () => reject(networkError()));
+    xhr.addEventListener("abort", () => reject(new ApiError("Upload aborted", 0)));
+
+    xhr.open(
+      API_CLIENT_ROUTES.createRecording.method.toUpperCase(),
+      `${API_BASE}${API_CLIENT_ROUTES.createRecording.path}`
     );
     xhr.send(formData);
   });

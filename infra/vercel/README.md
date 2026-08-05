@@ -42,8 +42,8 @@ in `vercel.json`, source code, an issue, PR, terminal transcript, or screenshot.
 
 | Project | Variable names | Classification | Notes |
 | --- | --- | --- | --- |
-| API | `B2_KEY_ID`, `B2_APPLICATION_KEY` | Secret | Restrict the B2 key to the intended bucket and least privilege. |
-| API | `B2_ENDPOINT`, `B2_BUCKET_NAME`, `B2_PUBLIC_URL`, `API_CORS_ORIGINS`, `ENABLE_DOCS`, `ALLOWED_KEY_PREFIX`, rate settings | Non-secret configuration | Set an exact web origin in `API_CORS_ORIGINS`; set `ENABLE_DOCS=false` in production. |
+| API | `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY` | Secret | Restrict the B2 key to the intended bucket and least privilege. |
+| API | `B2_REGION`, `B2_BUCKET_NAME`, `B2_PUBLIC_URL_BASE`, `API_CORS_ORIGINS`, `ENABLE_DOCS`, `ALLOWED_KEY_PREFIX`, rate settings | Non-secret configuration | Set an exact web origin in `API_CORS_ORIGINS`; set `ENABLE_DOCS=false` in production. |
 | API | `MAX_FILE_SIZE=4000000` | Required Vercel configuration | Leave headroom below Vercel's 4.5 MB Function payload ceiling for multipart overhead. |
 | API | `WARM_LIST_CACHE_ON_STARTUP=false` | Recommended Vercel configuration | Avoid an expensive full B2 scan on each cold start. |
 | API | `DOWNLOAD_COUNT_FILE=/tmp/download_count.json` | Optional ephemeral configuration | Allows a warm Function instance to write the counter, but it is not durable or shared. |
@@ -83,7 +83,7 @@ the Project's root directory and required variables pre-populated:
 
 | Button | `root-directory` | Pre-filled `env` |
 | --- | --- | --- |
-| API | `services/api` | `B2_KEY_ID`, `B2_APPLICATION_KEY`, `B2_ENDPOINT`, `B2_BUCKET_NAME`, `MAX_FILE_SIZE` |
+| API | `services/api` | `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`, `B2_REGION`, `B2_BUCKET_NAME`, `MAX_FILE_SIZE` |
 | Web | `apps/web` | `NEXT_PUBLIC_API_URL` |
 
 The buttons clone the repository into the operator's Git account and create one

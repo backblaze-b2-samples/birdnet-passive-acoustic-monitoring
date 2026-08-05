@@ -8,19 +8,31 @@ import {
 } from "@tanstack/react-query";
 import {
   ApiError,
+  createRecording,
   deleteFile,
+  deleteRecording,
   getDownloadUrl,
   getFileDetail,
   getFiles,
   getFileStats,
   getHealth,
   getPreviewUrl,
+  getRecording,
+  getRecordings,
+  getRecordingsStats,
   getUploadActivity,
+  runDetection,
+  updateRecording,
+  type RecordingCreateInput,
 } from "@/lib/api-client";
 import type {
   FileMetadata,
   FileMetadataDetail,
-} from "@vibe-coding-starter-kit/shared";
+  Recording,
+  RecordingDetail,
+  RecordingsStats,
+  RecordingUpdate,
+} from "@birdnet-pam/shared";
 
 // Single source of truth for query keys. Keep these tightly scoped so that
 // invalidating "files" doesn't blow away unrelated caches, and so an IDE
@@ -35,6 +47,9 @@ export const qk = {
   preview: (key: string) => [...qk.all, "preview", key] as const,
   detail: (key: string) => [...qk.all, "detail", key] as const,
   health: () => [...qk.all, "health"] as const,
+  recordings: () => [...qk.all, "recordings"] as const,
+  recordingsStats: () => [...qk.all, "recordings", "stats"] as const,
+  recording: (id: string) => [...qk.all, "recordings", "detail", id] as const,
 };
 
 export type Health = Awaited<ReturnType<typeof getHealth>>;
@@ -166,6 +181,89 @@ export function useDeleteFile() {
       // activity) against the server in the background.
       dropDeletedFileFromCache(qc, fileKey);
       qc.invalidateQueries({ queryKey: qk.all });
+    },
+  });
+}
+
+// --- Recordings (passive-acoustic monitoring) ------------------------------
+
+export function useRecordings() {
+  return useQuery<Recording[], ApiError>({
+    queryKey: qk.recordings(),
+    queryFn: getRecordings,
+  });
+}
+
+export function useRecordingsStats({ enabled = true }: QueryGate = {}) {
+  return useQuery<RecordingsStats, ApiError>({
+    queryKey: qk.recordingsStats(),
+    queryFn: getRecordingsStats,
+    enabled,
+  });
+}
+
+/**
+ * A single recording's detail. Polls every 2s while a detection run is in
+ * flight (status pending/running) so the timeline, clips, and status appear
+ * live; stops polling once the run settles.
+ */
+export function useRecording(id: string | undefined) {
+  return useQuery<RecordingDetail, ApiError>({
+    queryKey: qk.recording(id ?? ""),
+    queryFn: () => getRecording(id as string),
+    enabled: !!id,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "running" || status === "pending" ? 2000 : false;
+    },
+  });
+}
+
+export function useCreateRecording() {
+  const qc = useQueryClient();
+  return useMutation<
+    Recording,
+    ApiError,
+    { file: File; input: RecordingCreateInput; onProgress?: (p: number) => void }
+  >({
+    mutationFn: ({ file, input, onProgress }) =>
+      createRecording(file, input, onProgress),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.recordings() });
+      qc.invalidateQueries({ queryKey: qk.recordingsStats() });
+    },
+  });
+}
+
+export function useUpdateRecording(id: string) {
+  const qc = useQueryClient();
+  return useMutation<Recording, ApiError, RecordingUpdate>({
+    mutationFn: (update) => updateRecording(id, update),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.recording(id) });
+      qc.invalidateQueries({ queryKey: qk.recordings() });
+    },
+  });
+}
+
+export function useDeleteRecording() {
+  const qc = useQueryClient();
+  return useMutation<{ deleted: boolean; id: string }, ApiError, string>({
+    mutationFn: (id) => deleteRecording(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.recordings() });
+      qc.invalidateQueries({ queryKey: qk.recordingsStats() });
+    },
+  });
+}
+
+export function useRunDetection(id: string) {
+  const qc = useQueryClient();
+  return useMutation<{ id: string; status: string }, ApiError, void>({
+    mutationFn: () => runDetection(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.recording(id) });
+      qc.invalidateQueries({ queryKey: qk.recordings() });
     },
   });
 }

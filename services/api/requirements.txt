@@ -12,6 +12,15 @@ boto3>=1.35.0
 Pillow>=11.0.0
 PyPDF2>=3.0.0
 
+# Passive-acoustic monitoring: on-device BirdNET detection + audio clipping.
+# birdnet-analyzer is kahst/birdnet-team's OFFICIAL package (import name
+# `birdnet_analyzer`) — NOT the third-party birdnetlib wrapper. It bundles the
+# BirdNET GLOBAL 6K V2.4 model (no download / no API key) and pulls in a heavy
+# TensorFlow + librosa/resampy/numpy tree, so the first run warms up for a few
+# seconds. Detection/audio tests mock these, so `pnpm verify` never loads them.
+birdnet-analyzer>=2.4.0
+soundfile>=0.12.1
+
 # Dev / quality
 ruff>=0.8.0
 pytest>=8.0.0
