@@ -24,6 +24,20 @@ FastAPI backend with strict layered architecture and structural tests.
 - **Timeline** every detection over the recording duration, grouped/colored by species,
   with a species summary and inline clip playback via B2 presigned URLs.
 
+## What it looks like
+
+**Dashboard** — passive-acoustic metrics (recordings, detections, species, audio-hours, event clips, storage used), a detections-by-recording chart, and a recent-recordings table.
+
+![Dashboard with passive-acoustic monitoring metrics, a detections-by-recording chart, and recent recordings](docs/images/dashboard.png)
+
+**Recordings** — the survey library of every field recording under the `recordings/` prefix on B2, with its survey date, duration, detection and species counts, and a re-run control.
+
+![Recordings library table with survey dates, detection and species counts](docs/images/recordings.png)
+
+**Detection timeline** — a per-recording view: a species-colored detection timeline across the recording, a species summary with scientific names and max confidence, and event clips streamed from B2 presigned URLs.
+
+![Recording detail with a species-colored detection timeline, species summary, and playable event clips](docs/images/timeline.png)
+
 ## Why Backblaze B2
 
 Passive-acoustic monitoring is a storage-heavy workload: recorders produce hours of raw
