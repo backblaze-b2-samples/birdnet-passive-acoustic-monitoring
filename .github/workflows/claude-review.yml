@@ -41,7 +41,7 @@ jobs:
         if: ${{ hashFiles('apps/web/package.json') != '' }}
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "20.19.0"
 
       - name: Install frontend dependencies
         if: ${{ hashFiles('apps/web/package.json') != '' }}
