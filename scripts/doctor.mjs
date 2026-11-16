@@ -25,6 +25,8 @@ const VENV_UVICORN = resolve(REPO_ROOT, "services/api/.venv/bin/uvicorn");
 
 // Required minimum versions. Bump as upstream support shifts.
 const REQUIRED_NODE_MAJOR = 20;
+const REQUIRED_NODE_MINOR = 19;
+const REQUIRED_NODE_PATCH = 0;
 const REQUIRED_PNPM_MAJOR = 9;
 // Required B2 env vars + the exact placeholder strings shipped in
 // .env.example. Keep in sync with services/api/main.py REQUIRED_B2_SETTINGS
@@ -77,10 +79,17 @@ function checkPlatform() {
 
 function checkNode() {
   const v = parseSemver(process.version);
-  if (!v || v.major < REQUIRED_NODE_MAJOR) {
+  const isTooOld =
+    !v ||
+    v.major < REQUIRED_NODE_MAJOR ||
+    (v.major === REQUIRED_NODE_MAJOR &&
+      (v.minor < REQUIRED_NODE_MINOR ||
+        (v.minor === REQUIRED_NODE_MINOR && v.patch < REQUIRED_NODE_PATCH)));
+
+  if (isTooOld) {
     fail(
-      `Node ${process.version} is too old (need >= ${REQUIRED_NODE_MAJOR}.0.0)`,
-      `Install a current Node via nvm/fnm: \`nvm install ${REQUIRED_NODE_MAJOR}\``,
+      `Node ${process.version} is too old (need >= ${REQUIRED_NODE_MAJOR}.${REQUIRED_NODE_MINOR}.${REQUIRED_NODE_PATCH})`,
+      `Install a current Node via nvm/fnm: \`nvm install ${REQUIRED_NODE_MAJOR}.${REQUIRED_NODE_MINOR}.${REQUIRED_NODE_PATCH}\``,
     );
   }
 }
